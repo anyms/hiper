@@ -49,12 +49,19 @@ hiper.post("http://httpbin.org/post")
     .finally { response -> }
 
 // sending parameters with your request
-val params = hashMapOf(
+val args: HashMap<String, Any?> = hashMapOf(
     "name" to "Hiper",
     "age" to 1
 )
-hiper.get("http://httpbin.org/get")
-    .addArgs(params)
+hiper.get("http://httpbin.org/get", args = args)
+    .ifFailed { response -> }
+    .finally { response -> }
+
+// custom headers
+val headers: HashMap<String, Any?> = hashMapOf(
+    "User-Agent" to "Hiper/1.1"
+)
+hiper.get("http://httpbin.org/get", headers = headers)
     .ifFailed { response -> }
     .finally { response -> }
 ```

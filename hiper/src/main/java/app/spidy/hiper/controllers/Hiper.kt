@@ -18,20 +18,40 @@ import kotlin.concurrent.thread
 class Hiper {
     private val client = OkHttpClient()
 
-    fun get(url: String, isStream: Boolean = false, byteSize: Int = 4096): HttpHandler {
-        return HttpHandler(url, isStream, byteSize, action="get")
+    fun get(
+        url: String, isStream: Boolean = false, byteSize: Int = 4096,
+        args: HashMap<String, Any?> = hashMapOf(),
+        headers: HashMap<String, Any?> = hashMapOf()
+    ): HttpHandler {
+        return HttpHandler(url, isStream, byteSize, args=args, headers=headers, action="get")
     }
 
-    fun post(url: String, isStream: Boolean = false, byteSize: Int = 4096): HttpHandler {
-        return HttpHandler(url, isStream, byteSize, action="post")
+    fun post(
+        url: String, isStream: Boolean = false, byteSize: Int = 4096,
+        args: HashMap<String, Any?> = hashMapOf(),
+        formData: HashMap<String, Any?> = hashMapOf(),
+        headers: HashMap<String, Any?> = hashMapOf()
+    ): HttpHandler {
+        return HttpHandler(url, isStream, byteSize, args=args,
+            formData=formData, headers=headers, action="post")
     }
 
-    fun head(url: String, isStream: Boolean = false, byteSize: Int = 4096): HttpHandler {
-        return HttpHandler(url, isStream, byteSize, action="head")
+    fun head(
+        url: String, isStream: Boolean = false, byteSize: Int = 4096,
+        args: HashMap<String, Any?> = hashMapOf(),
+        headers: HashMap<String, Any?> = hashMapOf()
+    ): HttpHandler {
+        return HttpHandler(url, isStream, byteSize, args=args, headers=headers, action="head")
     }
 
-    fun put(url: String, isStream: Boolean = false, byteSize: Int = 4096): HttpHandler {
-        return HttpHandler(url, isStream, byteSize, action="put")
+    fun put(
+        url: String, isStream: Boolean = false, byteSize: Int = 4096,
+        args: HashMap<String, Any?> = hashMapOf(),
+        formData: HashMap<String, Any?> = hashMapOf(),
+        headers: HashMap<String, Any?> = hashMapOf()
+    ): HttpHandler {
+        return HttpHandler(url, isStream, byteSize, args=args,
+            formData = formData, headers=headers, action="put")
     }
 
 
@@ -39,44 +59,17 @@ class Hiper {
         private val url: String,
         private val isStream: Boolean,
         private val byteSize: Int,
-        private val action: String
+        private val args: HashMap<String, Any?> = hashMapOf(),
+        private val formData: HashMap<String, Any?> = hashMapOf(),
+        private val headers: HashMap<String, Any?> = hashMapOf(),
+        private val action: String = ""
     ) {
         private val listener = Listener()
-        private val formData = HashMap<String, String>()
-        private val headers = Headers()
-        private val args = HashMap<String, String>()
 
         init {
-            headers.put("User-Agent", "Fetcher/" + BuildConfig.VERSION_NAME)
-        }
-
-        fun addHeader(key: String, value: Any?): HttpHandler {
-            headers.put(key, value.toString())
-            return this
-        }
-
-        fun addFormData(key: String, value: Any?): HttpHandler {
-            formData[key] = value.toString()
-            return this
-        }
-
-        fun addFormData(args: HashMap<String, Any?>): HttpHandler {
-            for ((key, value) in args) {
-                this.formData[key] = value.toString()
+            if (headers.isEmpty()) {
+                headers["User-Agent"] = "Fetcher/" + BuildConfig.VERSION_NAME
             }
-            return this
-        }
-
-        fun addArg(key: String, value: Any?): HttpHandler {
-            args[key] = value.toString()
-            return this
-        }
-
-        fun addArgs(args: HashMap<String, Any?>): HttpHandler {
-            for ((key, value) in args) {
-                this.args[key] = value.toString()
-            }
-            return this
         }
 
         fun ifFailed(callback: (Response) -> Unit): HttpHandler {
@@ -91,19 +84,19 @@ class Hiper {
             when (action) {
                 "get" -> {
                     val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder return null")
-                    request = __get_request(urlBuilder, args, headers.toHashMap())
+                    request = __get_request(urlBuilder, args, headers)
                 }
                 "post" -> {
                     val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder return null")
-                    request = __post_request(urlBuilder, args, formData, headers.toHashMap())
+                    request = __post_request(urlBuilder, args, formData, headers)
                 }
                 "head" -> {
                     val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder return null")
-                    request = __head_request(urlBuilder, args, headers.toHashMap())
+                    request = __head_request(urlBuilder, args, headers)
                 }
                 "put" -> {
                     val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder return null")
-                    request = __put_request(urlBuilder, args, headers.toHashMap())
+                    request = __put_request(urlBuilder, args, formData, headers)
                 }
             }
 
@@ -180,21 +173,23 @@ class Hiper {
 
         private fun __get_request(
             urlBuilder: HttpUrl.Builder,
-            args: HashMap<String, String>, headers: HashMap<String, String>): Request {
+            args: HashMap<String, Any?>, headers: HashMap<String, Any?>
+        ): Request {
             val request = Request.Builder()
 
             for ((key, value) in headers) {
-                request.addHeader(key, value)
+                request.addHeader(key, value.toString())
             }
             for ((key, value) in args) {
-                urlBuilder.addQueryParameter(key, value)
+                urlBuilder.addQueryParameter(key, value.toString())
             }
             return request.url(urlBuilder.build().toString()).get().build()
         }
 
         private fun __post_request(
-            urlBuilder: HttpUrl.Builder, args: HashMap<String, String>,
-            formData: HashMap<String, String>, headers: HashMap<String, String>): Request {
+            urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
+            formData: HashMap<String, Any?>, headers: HashMap<String, Any?>
+        ): Request {
             if (formData.isEmpty()) {
                 formData["__hiper"] = BuildConfig.VERSION_NAME
             }
@@ -204,31 +199,38 @@ class Hiper {
             val request = Request.Builder()
 
             for ((key, value) in formData) {
-                requestBody.addFormDataPart(key, value)
+                requestBody.addFormDataPart(key, value.toString())
             }
             for ((key, value) in headers) {
-                request.addHeader(key, value)
+                request.addHeader(key, value.toString())
             }
             for ((key, value) in args) {
-                urlBuilder.addQueryParameter(key, value)
+                urlBuilder.addQueryParameter(key, value.toString())
             }
 
             return request.url(urlBuilder.build().toString()).post(requestBody.build()).build()
         }
 
-        private fun __head_request(urlBuilder: HttpUrl.Builder, args: HashMap<String, String>, headers: HashMap<String, String>): Request {
+        private fun __head_request(
+            urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
+            headers: HashMap<String, Any?>
+        ): Request {
             val request = Request.Builder()
 
             for ((key, value) in headers) {
-                request.addHeader(key, value)
+                request.addHeader(key, value.toString())
             }
             for ((key, value) in args) {
-                urlBuilder.addQueryParameter(key, value)
+                urlBuilder.addQueryParameter(key, value.toString())
             }
             return request.url(urlBuilder.build().toString()).head().build()
         }
 
-        private fun __put_request(urlBuilder: HttpUrl.Builder, args: HashMap<String, String>, headers: HashMap<String, String>): Request {
+        private fun __put_request(
+            urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
+            formData: HashMap<String, Any?>,
+            headers: HashMap<String, Any?>
+        ): Request {
             if (args.isEmpty()) {
                 args["__hiper"] = BuildConfig.VERSION_NAME
             }
@@ -237,14 +239,14 @@ class Hiper {
                 .setType(MultipartBody.FORM)
             val request = Request.Builder()
 
-            for ((key, value) in args) {
-                requestBody.addFormDataPart(key, value)
+            for ((key, value) in formData) {
+                requestBody.addFormDataPart(key, value.toString())
             }
             for ((key, value) in headers) {
-                request.addHeader(key, value)
+                request.addHeader(key, value.toString())
             }
             for ((key, value) in args) {
-                urlBuilder.addQueryParameter(key, value)
+                urlBuilder.addQueryParameter(key, value.toString())
             }
 
             return request.url(urlBuilder.build().toString()).put(requestBody.build()).build()
