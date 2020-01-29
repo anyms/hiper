@@ -28,8 +28,7 @@ class Hiper {
 
     fun post(
         url: String, isStream: Boolean = false, byteSize: Int = 4096,
-        args: HashMap<String, Any?> = hashMapOf(),
-        formData: HashMap<String, Any?> = hashMapOf(),
+        args: HashMap<String, Any?> = hashMapOf(), formData: HashMap<String, Any?> = hashMapOf(),
         headers: HashMap<String, Any?> = hashMapOf()
     ): HttpHandler {
         return HttpHandler(url, isStream, byteSize, args=args,
@@ -46,8 +45,7 @@ class Hiper {
 
     fun put(
         url: String, isStream: Boolean = false, byteSize: Int = 4096,
-        args: HashMap<String, Any?> = hashMapOf(),
-        formData: HashMap<String, Any?> = hashMapOf(),
+        args: HashMap<String, Any?> = hashMapOf(), formData: HashMap<String, Any?> = hashMapOf(),
         headers: HashMap<String, Any?> = hashMapOf()
     ): HttpHandler {
         return HttpHandler(url, isStream, byteSize, args=args,
