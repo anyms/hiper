@@ -53,6 +53,88 @@ class Hiper {
     }
 
 
+    private fun __get_request(
+        urlBuilder: HttpUrl.Builder,
+        args: HashMap<String, Any?>, headers: HashMap<String, Any?>
+    ): Request {
+        val request = Request.Builder()
+
+        for ((key, value) in headers) {
+            request.addHeader(key, value.toString())
+        }
+        for ((key, value) in args) {
+            urlBuilder.addQueryParameter(key, value.toString())
+        }
+        return request.url(urlBuilder.build().toString()).get().build()
+    }
+
+    private fun __post_request(
+        urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
+        formData: HashMap<String, Any?>, headers: HashMap<String, Any?>
+    ): Request {
+        if (formData.isEmpty()) {
+            formData["__hiper"] = BuildConfig.VERSION_NAME
+        }
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+        val request = Request.Builder()
+
+        for ((key, value) in formData) {
+            requestBody.addFormDataPart(key, value.toString())
+        }
+        for ((key, value) in headers) {
+            request.addHeader(key, value.toString())
+        }
+        for ((key, value) in args) {
+            urlBuilder.addQueryParameter(key, value.toString())
+        }
+
+        return request.url(urlBuilder.build().toString()).post(requestBody.build()).build()
+    }
+
+    private fun __head_request(
+        urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
+        headers: HashMap<String, Any?>
+    ): Request {
+        val request = Request.Builder()
+
+        for ((key, value) in headers) {
+            request.addHeader(key, value.toString())
+        }
+        for ((key, value) in args) {
+            urlBuilder.addQueryParameter(key, value.toString())
+        }
+        return request.url(urlBuilder.build().toString()).head().build()
+    }
+
+    private fun __put_request(
+        urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
+        formData: HashMap<String, Any?>,
+        headers: HashMap<String, Any?>
+    ): Request {
+        if (args.isEmpty()) {
+            args["__hiper"] = BuildConfig.VERSION_NAME
+        }
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+        val request = Request.Builder()
+
+        for ((key, value) in formData) {
+            requestBody.addFormDataPart(key, value.toString())
+        }
+        for ((key, value) in headers) {
+            request.addHeader(key, value.toString())
+        }
+        for ((key, value) in args) {
+            urlBuilder.addQueryParameter(key, value.toString())
+        }
+
+        return request.url(urlBuilder.build().toString()).put(requestBody.build()).build()
+    }
+
+
     inner class HttpHandler(
         private val url: String,
         private val isStream: Boolean,
@@ -81,19 +163,19 @@ class Hiper {
             /* Build the appropriate requests */
             when (action) {
                 "get" -> {
-                    val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder return null")
+                    val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder returns null")
                     request = __get_request(urlBuilder, args, headers)
                 }
                 "post" -> {
-                    val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder return null")
+                    val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder returns null")
                     request = __post_request(urlBuilder, args, formData, headers)
                 }
                 "head" -> {
-                    val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder return null")
+                    val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder returns null")
                     request = __head_request(urlBuilder, args, headers)
                 }
                 "put" -> {
-                    val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder return null")
+                    val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder returns null")
                     request = __put_request(urlBuilder, args, formData, headers)
                 }
             }
@@ -142,6 +224,7 @@ class Hiper {
                         callback.invoke(resp)
                     } else {
                         listener.ifFailed?.invoke(resp)
+                        listener.ifFailedOrException?.invoke()
                     }
                 } catch (e: Exception) {
                     listener.ifException?.invoke(e)
@@ -166,88 +249,71 @@ class Hiper {
             listener.ifFailedOrException = callback
             return this
         }
+    }
 
+    inner class Legacy {
+        private fun execute(request: Request): Response {
+            val call = client.newCall(request)
 
-
-        private fun __get_request(
-            urlBuilder: HttpUrl.Builder,
-            args: HashMap<String, Any?>, headers: HashMap<String, Any?>
-        ): Request {
-            val request = Request.Builder()
-
-            for ((key, value) in headers) {
-                request.addHeader(key, value.toString())
+            val response = call.execute()
+            val respHeaders = Headers()
+            for ((key, value) in response.headers) {
+                respHeaders.put(key, value)
             }
-            for ((key, value) in args) {
-                urlBuilder.addQueryParameter(key, value.toString())
-            }
-            return request.url(urlBuilder.build().toString()).get().build()
+            val resp = Response(
+                response.isRedirect,
+                response.code,
+                response.message,
+                null,
+                null,
+                respHeaders
+            )
+            val content = response.body?.bytes()
+            resp.text = if (content == null) null else String(content)
+            resp.content = content
+            return resp
         }
 
-        private fun __post_request(
-            urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
-            formData: HashMap<String, Any?>, headers: HashMap<String, Any?>
-        ): Request {
-            if (formData.isEmpty()) {
-                formData["__hiper"] = BuildConfig.VERSION_NAME
-            }
-
-            val requestBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-            val request = Request.Builder()
-
-            for ((key, value) in formData) {
-                requestBody.addFormDataPart(key, value.toString())
-            }
-            for ((key, value) in headers) {
-                request.addHeader(key, value.toString())
-            }
-            for ((key, value) in args) {
-                urlBuilder.addQueryParameter(key, value.toString())
-            }
-
-            return request.url(urlBuilder.build().toString()).post(requestBody.build()).build()
+        fun get(
+            url: String,
+            args: HashMap<String, Any?> = hashMapOf(),
+            headers: HashMap<String, Any?> = hashMapOf()
+        ): Response {
+            val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder returns null")
+            val request = __get_request(urlBuilder, args, headers)
+            return execute(request)
         }
 
-        private fun __head_request(
-            urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
-            headers: HashMap<String, Any?>
-        ): Request {
-            val request = Request.Builder()
-
-            for ((key, value) in headers) {
-                request.addHeader(key, value.toString())
-            }
-            for ((key, value) in args) {
-                urlBuilder.addQueryParameter(key, value.toString())
-            }
-            return request.url(urlBuilder.build().toString()).head().build()
+        fun post(
+            url: String,
+            args: HashMap<String, Any?> = hashMapOf(),
+            formData: HashMap<String, Any?> = hashMapOf(),
+            headers: HashMap<String, Any?> = hashMapOf()
+        ): Response {
+            val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder returns null")
+            val request = __post_request(urlBuilder, args, formData, headers)
+            return execute(request)
         }
 
-        private fun __put_request(
-            urlBuilder: HttpUrl.Builder, args: HashMap<String, Any?>,
-            formData: HashMap<String, Any?>,
-            headers: HashMap<String, Any?>
-        ): Request {
-            if (args.isEmpty()) {
-                args["__hiper"] = BuildConfig.VERSION_NAME
-            }
+        fun head(
+            url: String,
+            args: HashMap<String, Any?> = hashMapOf(),
+            headers: HashMap<String, Any?> = hashMapOf()
+        ): Response {
+            val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder returns null")
+            val request = __head_request(urlBuilder, args, headers)
+            return execute(request)
+        }
 
-            val requestBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-            val request = Request.Builder()
-
-            for ((key, value) in formData) {
-                requestBody.addFormDataPart(key, value.toString())
-            }
-            for ((key, value) in headers) {
-                request.addHeader(key, value.toString())
-            }
-            for ((key, value) in args) {
-                urlBuilder.addQueryParameter(key, value.toString())
-            }
-
-            return request.url(urlBuilder.build().toString()).put(requestBody.build()).build()
+        fun put(
+            url: String,
+            args: HashMap<String, Any?> = hashMapOf(),
+            formData: HashMap<String, Any?> = hashMapOf(),
+            headers: HashMap<String, Any?> = hashMapOf()
+        ): Response {
+            val urlBuilder = url.toHttpUrlOrNull()?.newBuilder() ?: throw Exception("UrlBuilder returns null")
+            val request = __put_request(urlBuilder, args, formData, headers)
+            return execute(request)
         }
     }
 }
