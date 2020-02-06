@@ -159,6 +159,7 @@ class Hiper {
 
         fun finally(callback: (Response) -> Unit): Caller {
             var request: Request? = null
+            var isExceptionOrFailed = false
 
             /* Build the appropriate requests */
             when (action) {
@@ -209,11 +210,14 @@ class Hiper {
                                 listener.ifStream?.invoke(buffer, bytes)
                             }
                         } catch (e: Exception) {
+                            isExceptionOrFailed = true
                             listener.ifException?.invoke(e)
                             listener.ifFailedOrException?.invoke()
                         } finally {
                             inputStream?.close()
-                            listener.ifStream?.invoke(null, -1)
+                            if (!isExceptionOrFailed) {
+                                listener.ifStream?.invoke(null, -1)
+                            }
                         }
                     } else {
                         val content = response.body?.bytes()
