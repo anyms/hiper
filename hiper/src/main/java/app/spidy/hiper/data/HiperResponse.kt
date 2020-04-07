@@ -1,11 +1,14 @@
 package app.spidy.hiper.data
 
-data class Response(
+import java.io.InputStream
+
+data class HiperResponse(
     val isRedirect: Boolean,
     val statusCode: Int,
     val message: String,
     var text: String? = null,
     var content: ByteArray? = null,
+    var stream: InputStream? = null,
     val headers: Headers,
     var isSuccessful: Boolean = false
 ) {
@@ -13,7 +16,7 @@ data class Response(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as Response
+        other as HiperResponse
 
         if (isRedirect != other.isRedirect) return false
         if (statusCode != other.statusCode) return false
