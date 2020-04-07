@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
         val hiper = Hiper.getSyncInstance()
 
         thread {
-            val response = hiper.head("https://httpbin.org/basic-auth/anyms/rockjeev", username = "anyms", password = "rockjeev",
+            val response = hiper.head("https://httpbin.org/basic-auth/anyms/rockjeev", username = "anys", password = "rockjeev",
                 cookies = hashMapOf("name" to "jeeva"))
             Log.d("hello", response.statusCode.toString())
         }

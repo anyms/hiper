@@ -16,10 +16,11 @@ class Hiper {
         headers: HashMap<String, Any> = hashMapOf(),
         cookies: HashMap<String, String> = hashMapOf(),
         username: String? = null,
-        password: String? = null
+        password: String? = null,
+        timeout: Long? = null
     ): HiperResponse {
         return GetRequest(url, isStream, byteSize, args=args, headers=headers, cookies=cookies,
-            username = username, password = password).sync()
+            username = username, password = password, timeout=timeout).sync()
     }
 
     fun post(
@@ -31,10 +32,11 @@ class Hiper {
         cookies: HashMap<String, String> = hashMapOf(),
         auths: HashMap<String, Any>,
         username: String? = null,
-        password: String? = null
+        password: String? = null,
+        timeout: Long? = null
     ): HiperResponse {
         return PostRequest(url, isStream, byteSize, args=args, form=form, files=files, headers=headers,
-            cookies=cookies, username=username, password = password).sync()
+            cookies=cookies, username=username, password = password, timeout = timeout).sync()
     }
 
     fun head(
@@ -43,10 +45,11 @@ class Hiper {
         headers: HashMap<String, Any> = hashMapOf(),
         cookies: HashMap<String, String> = hashMapOf(),
         username: String? = null,
-        password: String? = null
+        password: String? = null,
+        timeout: Long? = null
     ): HiperResponse {
         return HeadRequest(url, isStream, byteSize, args=args, headers=headers, cookies=cookies,
-            username = username, password = password).sync()
+            username = username, password = password, timeout=timeout).sync()
     }
 
 
@@ -57,10 +60,11 @@ class Hiper {
             headers: HashMap<String, Any> = hashMapOf(),
             cookies: HashMap<String, String> = hashMapOf(),
             username: String? = null,
-            password: String? = null
+            password: String? = null,
+            timeout: Long? = null
         ): GetRequest.Queue {
             return GetRequest(url, isStream, byteSize, args=args, headers=headers, cookies=cookies,
-                username = username, password = password).Queue()
+                username = username, password = password, timeout=timeout).Queue()
         }
 
         fun post(
@@ -71,10 +75,11 @@ class Hiper {
             headers: HashMap<String, Any> = hashMapOf(),
             cookies: HashMap<String, String> = hashMapOf(),
             username: String? = null,
-            password: String? = null
+            password: String? = null,
+            timeout: Long? = null
         ): PostRequest.Queue {
             return PostRequest(url, isStream, byteSize, args=args, form=form, files=files,
-                headers=headers, cookies=cookies, username=username, password=password).Queue()
+                headers=headers, cookies=cookies, username=username, password=password, timeout = timeout).Queue()
         }
 
         fun head(
@@ -83,10 +88,11 @@ class Hiper {
             headers: HashMap<String, Any> = hashMapOf(),
             cookies: HashMap<String, String> = hashMapOf(),
             username: String? = null,
-            password: String? = null
+            password: String? = null,
+            timeout: Long? = null
         ): HeadRequest.Queue {
             return HeadRequest(url, isStream, byteSize, args=args, headers=headers, cookies=cookies,
-                username = username, password = password).Queue()
+                username = username, password = password, timeout=timeout).Queue()
         }
     }
 

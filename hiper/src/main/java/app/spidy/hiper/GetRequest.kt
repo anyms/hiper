@@ -10,6 +10,7 @@ import org.riversun.okhttp3.OkHttp3CookieHelper
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
+import java.util.concurrent.TimeUnit
 
 class GetRequest(
     private val url: String,
@@ -19,7 +20,8 @@ class GetRequest(
     private val headers: HashMap<String, Any>,
     private val cookies: HashMap<String, String>,
     private val username: String?,
-    private val password: String?
+    private val password: String?,
+    private val timeout: Long?
 ) {
     private lateinit var client: OkHttpClient
 
@@ -36,9 +38,14 @@ class GetRequest(
 
         val u = urlBuilder.build().toString()
         for ((k, v) in cookies) cookieManager.setCookie(u, k, v)
-        client = OkHttpClient.Builder()
+        val localClient = OkHttpClient.Builder()
             .cookieJar(cookieManager.cookieJar())
-            .build()
+        if (timeout != null) {
+            localClient.connectTimeout(timeout, TimeUnit.SECONDS)
+            localClient.readTimeout(timeout, TimeUnit.SECONDS)
+            localClient.writeTimeout(timeout, TimeUnit.SECONDS)
+        }
+        client = localClient.build()
         return request.url(urlBuilder.build().toString()).get().build()
     }
 
