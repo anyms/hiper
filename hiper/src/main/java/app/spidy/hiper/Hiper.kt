@@ -30,7 +30,6 @@ class Hiper {
         files: List<File> = listOf(),
         headers: HashMap<String, Any> = hashMapOf(),
         cookies: HashMap<String, String> = hashMapOf(),
-        auths: HashMap<String, Any>,
         username: String? = null,
         password: String? = null,
         timeout: Long? = null
