@@ -42,4 +42,8 @@ data class HiperResponse(
         result = 31 * result + isSuccessful.hashCode()
         return result
     }
+
+    fun close() {
+        stream?.close()
+    }
 }
